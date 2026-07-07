@@ -27,7 +27,9 @@ tradeoff visible.
 
 This is a **long process spanning multiple sessions**. The refined **C3 component
 design is the most important artifact this skill produces** — everything before it
-exists to make it right, and code-level detail (C4) may never be needed.
+exists to make it right. Code-level detail (C4) is OUT of this skill's scope —
+when a component's internals need de-risking, the separate `/c4-code` command
+handles it, on demand, from the finished C3.
 
 ## The Iron Rules of Socratic Dialogue
 
@@ -405,7 +407,8 @@ Wait for corrections, fold them in, then freeze the final artifacts.
 4. `diagrams/` — one `.mmd` file per diagram built (C1/C2/C3, plus dynamic flows,
    deployment per environment, and system landscape where they earned their place),
    each passing the review checklist; they support the design, they are not the
-   design. C4 (code level) only on explicit request.
+   design. Code level (C4) is not produced by this skill — point the user to the
+   separate `/c4-code <component>` command if they ask.
 5. If cloud mode: `cloud-mapping.md` — element → service, fit rationale, WAF risks.
 
 ## Anti-patterns (never)

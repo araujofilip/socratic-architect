@@ -47,14 +47,35 @@ impacted forks → supersede (never rewrite) reversed ADRs → scoped mini-resta
 
 ```
 socratic-architect/
-├── SKILL.md                 # the skill: rules, stages, loops, gates
+├── SKILL.md                 # the skill: rules, stages, loops, gates (C1→C3)
 ├── references/
 │   ├── aws.md               # AWS component catalog (purpose & fit, no pricing)
 │   └── azure.md             # Azure component catalog (purpose & fit, no pricing)
+├── commands/
+│   └── c4-code.md           # /c4-code slash command — C4 (code level) on demand,
+│                            # deliberately separate from the skill (rarely needed)
 ├── README.md
 ├── CHANGELOG.md
 └── LICENSE
 ```
+
+### The /c4-code command (Claude Code only)
+
+C4 level 4 (code) is not part of the skill's flow — per the canon it is rarely
+needed and best generated from real code. When you DO want to de-risk one
+component's internals from a finished C3, install the command by copying it:
+
+```bash
+# personal (all projects)
+cp commands/c4-code.md ~/.claude/commands/
+# or per-project
+cp commands/c4-code.md <project>/.claude/commands/
+```
+
+Then run `/c4-code <component name>`. It reads `architecture/component-design.md`,
+honors every decided contract (and keeps deferred choices deferred), and produces an
+illustrative Mermaid class/sequence sketch saved as
+`architecture/diagrams/c4-<component>.mmd`.
 
 ## Artifacts the skill produces in YOUR project
 

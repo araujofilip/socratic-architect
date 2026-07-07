@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0 — 2026-07-07
+
+- C4 (code level) fully EXTRACTED from the skill into a standalone manual slash
+  command, `commands/c4-code.md` (/c4-code <component>). Rationale: per canon the
+  code level is rarely needed and is a different kind of task (on-demand
+  de-risking of one component) — not part of the Socratic design flow. The
+  command reads the finished C3, honors decided contracts, keeps deferred choices
+  deferred, outputs an illustrative Mermaid sketch to
+  architecture/diagrams/c4-<component>.mmd, and never reopens design decisions
+  (genuine findings are routed to the skill's Change Intake).
+- SKILL.md scope statements and deliverables updated accordingly.
+
 ## 1.3.0 — 2026-07-07
 
 - Supporting diagrams from c4model.com/diagrams: deployment diagram (canonically
