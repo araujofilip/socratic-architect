@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.0 — 2026-07-07
+
+- Supporting diagrams from c4model.com/diagrams: deployment diagram (canonically
+  recommended) closes Stage 4 as diagrams/deployment-<env>.mmd with nested nodes
+  and infrastructure elements; C3 key flows that earn a diagram become
+  diagrams/dynamic-<flow>.mmd (sparingly, per canon); optional system landscape
+  at Stage 1 for many-system organizations. Global rule: only diagrams that add
+  value — never every type by default.
+- Official diagram review checklist embedded as a QA gate before presenting any
+  diagram (title/scope, legend, element names+types+purpose, tech where
+  applicable, labelled directional arrows, protocols, decodable notation).
+- Queues-and-topics canon: never model a message bus as a container — model each
+  queue/topic as a container or use "via queue X" relationship labels; queue and
+  message-format OWNERSHIP added to the Boundary Semantics Baseline as a contract
+  question.
+- House C3 Style now explicitly optional: asked ONCE before the first C3; no
+  standard → skill defaults + offer the result as a seed standard; per-team
+  standards → scoped house-styles/<team>.md, ask which applies, never mix
+  conventions in one design.
+
 ## 1.2.0 — 2026-07-07
 
 - Stage 3b redefined: Technology Baseline → **Boundary Semantics Baseline**, built

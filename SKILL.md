@@ -81,6 +81,17 @@ Keep under `architecture/` in the project (or `/mnt/user-data/outputs/architectu
   the file is the current truth; history lives in git. Documents reference
   diagrams by path instead of embedding them.
 
+Beyond the static levels, two supporting diagram types have their own files:
+`dynamic-<flow-slug>.mmd` (Mermaid sequence) for a runtime flow, and
+`deployment-<environment>.mmd` for infrastructure mapping. Global rule from the
+canon: produce only the diagrams that add value — never all types by default.
+
+**Review checklist (run before presenting ANY diagram, per c4model.com):** title with
+type and scope? · key/legend where notation isn't self-evident? · every element
+named, typed, and its purpose clear? · technology where applicable? · every arrow
+labelled with intent matching its direction? · protocol on inter-process edges? ·
+acronyms, colours, shapes, and line styles all decodable by a reader?
+
 **C4 notation conformance (every diagram):** a title stating type and scope · every
 element with explicit type and a one-line description · every relationship
 unidirectional and specifically labelled (never just "Uses") · every edge that
@@ -156,6 +167,10 @@ work · actors · external systems and their protocols · scale expectations as 
 hard constraints · non-functional priorities as a **ranking** (availability, latency,
 cost, delivery speed, security, operability — ranking forces tradeoffs; ratings don't).
 
+If the new system lands in an organization with many interacting internal systems,
+a **system landscape diagram** (`diagrams/system-landscape.mmd`) can map that wider
+enterprise context — offer it only when the C1 alone can't tell the story.
+
 **Gate:** a short context summary in chat (prose + actor/external-system table; a C1
 diagram only if it clarifies — if built, save as `diagrams/c1-system-context.mmd`)
 + "What I'm assuming" list. Explicit yes required.
@@ -175,6 +190,13 @@ containers. Under single-team ownership, a "microservice" is a GROUP of containe
 (API + its schema) inside one software system; only when a separate team owns it does
 it become a separate software system (and the C1 changes shape — see Change Intake).
 Technology per container is captured when known; "TBD" is acceptable during design.
+
+**Queues and topics (canon):** never model a message BUS as a container — it hides
+the real coupling between producers and consumers. Model each queue/topic as its own
+container (a queue is essentially a data store), or omit the boxes and use "via
+queue X" labels on the relationships; both are correct, choose per readability (a
+distinct line style for messaging vs. API calls helps). This also keeps queues
+independent of deployment topology (one broker in dev, many in prod).
 
 ### The refinement loop (used here and, more deeply, in Stage 3)
 
@@ -230,6 +252,8 @@ labels are required on those edges) · delivery semantics of any queue/topic
 (at-least-once? ordered? DLQ?) and the idempotency obligations they impose on
 consumers · the error model at each boundary (shape, who retries, backoff) ·
 idempotency of exposed operations · data ownership and where invariants are enforced ·
+ownership of each queue/topic and its message format when producer and consumer
+belong to different containers/systems (who defines the schema? who operates it?) ·
 consistency visible to consumers (read-your-writes vs. eventual, tolerated staleness) ·
 auth mechanism at boundaries (what credential a caller must present).
 
@@ -281,7 +305,10 @@ Maintain per deep-dived container:
 ### Component map            (reference to diagrams/c3-<container-slug>.mmd)
 ### Components               (table: name | responsibility | technology | owns data | depends on)
 ### Contracts                (per significant edge: in / out / errors / mode / protocol)
-### Key flows                (2–3 sequence walkthroughs incl. one failure path)
+### Key flows                (2–3 walkthroughs incl. one failure path; a flow that
+                              earns a diagram becomes diagrams/dynamic-<flow>.mmd —
+                              canon: dynamic diagrams sparingly, only for complex
+                              or recurring interaction patterns)
 ### Decisions                (links to ADRs)
 ### Deliberately not decided (with revisit-triggers)
 ```
@@ -289,11 +316,22 @@ Maintain per deep-dived container:
 **Gate:** Restatement (Stage 5 format) scoped to this container before moving to the
 next one.
 
-## House C3 Style (organization template intake)
+## House C3 Style (organization template intake — OPTIONAL input)
 
-Organizations often have their own C3 conventions. The user may hand over an example
-component diagram/document ("our C3s look like this") at any point — treat it as a
-first-class input:
+A consolidated C3 standard may or may not exist: some organizations have one, many
+have none, and in some each team follows a different convention. Handle all three
+without nagging:
+
+- **Before the first C3 is drawn**, ask ONCE (a normal Socratic question): "does
+  your team have a C3 convention I should match? If yes, send an example; if not,
+  I'll use this skill's default." Never ask again in the same engagement.
+- **No standard exists:** proceed with the skill's defaults — and at the end, offer
+  the produced C3 as a candidate seed standard the team could adopt.
+- **Standards vary by team:** scope each style to its team — store as
+  `house-styles/<org-or-team-slug>.md` — and when the project's team is ambiguous,
+  ask which style applies. NEVER mix conventions within one design.
+
+When an example IS provided, treat it as a first-class input:
 
 1. **Mine it first** (Iron Rule 4): extract the conventions — notation and tool,
    element naming patterns, granularity (how big is a "component" for them), what
@@ -318,11 +356,18 @@ first-class input:
    mention which one is in effect.
 6. House style changes go through Change Intake like any other input change.
 
-## Stage 4 — Cloud Mapping (when a cloud is in play)
+## Stage 4 — Cloud Mapping & Deployment (when a cloud is in play)
 
 With the reference catalog loaded, map C2/C3 elements to concrete services — still
 Socratically, 2–4 questions max, using the reference's decision trees (compute, data,
 messaging, integration). Justify each mapping by **purpose and fit**, never by price.
+
+Close the mapping with a **deployment diagram** (canonically recommended):
+`diagrams/deployment-<environment>.mmd` showing nested deployment nodes (region →
+service → runtime), container instances placed on them, and relevant infrastructure
+nodes (DNS, load balancer, firewall). Start with production; add other environments
+only when they differ in ways that matter. Cloud provider icons are fine if the
+legend explains them.
 Run the reference's Well-Architected quick check; output the top 3 risks + cheapest
 mitigation. **Pricing only if the user asks** — then research current prices rather
 than recalling them.
@@ -357,9 +402,10 @@ Wait for corrections, fold them in, then freeze the final artifacts.
 1. `component-design.md` — the refined C3. The reason this skill exists.
 2. `adrs/` — every decision with its real driver.
 3. `working-notes.md` frozen as the design log; `open-questions.md` with triggers.
-4. `diagrams/` — one `.mmd` file per diagram built (C1/C2/C3), where they aid
-   understanding; they support the design, they are not the design. C4 (code
-   level) only on explicit request.
+4. `diagrams/` — one `.mmd` file per diagram built (C1/C2/C3, plus dynamic flows,
+   deployment per environment, and system landscape where they earned their place),
+   each passing the review checklist; they support the design, they are not the
+   design. C4 (code level) only on explicit request.
 5. If cloud mode: `cloud-mapping.md` — element → service, fit rationale, WAF risks.
 
 ## Anti-patterns (never)
@@ -375,8 +421,12 @@ Wait for corrections, fold them in, then freeze the final artifacts.
   abstract boxes, which is exactly what this skill exists to avoid.
 - The inverse failure: blocking the C3 on internal choices (libraries, ORM, code
   architecture) that don't cross any boundary — those are deferrable by design.
-- Ignoring a provided house style, or re-litigating a house convention after the
-  organization has answered the critique once.
+- Ignoring a provided house style, re-litigating a house convention after the
+  organization has answered the critique once, mixing different teams' conventions
+  in one design, or asking about a house standard more than once per engagement.
+- Modelling a message bus as a container (model the queues/topics, or use "via"
+  labels on relationships).
+- Producing every diagram type by default — only the ones that add value.
 - Decomposing every container to components.
 - Quoting cloud prices from memory; discussing price at all unless asked.
 - Skipping a Restatement gate because "we already discussed everything".
