@@ -81,6 +81,14 @@ Keep under `architecture/` in the project (or `/mnt/user-data/outputs/architectu
   the file is the current truth; history lives in git. Documents reference
   diagrams by path instead of embedding them.
 
+**C4 notation conformance (every diagram, per c4model.com):** a title stating type
+and scope · every element with explicit type, a one-line description, and — for
+every container and component — an explicit technology in brackets (e.g.
+`[Component: ASP.NET Core Controller]`) · every relationship unidirectional and
+specifically labelled (never just "Uses") · relationships between containers
+labelled with technology/protocol (e.g. "JSON/HTTPS", "AMQP") · a key/legend when
+notation isn't self-evident.
+
 **Resuming a session:** if `working-notes.md` exists, read it (and skim the ADRs)
 BEFORE saying anything. Open with a 3–5 line state summary — where we are, what was
 decided last, what the next open question is — and continue. Never restart discovery
@@ -161,8 +169,10 @@ Typical C2 forks (skip what the inputs already settle): monolith vs. modular mon
 vs. services · sync vs. async boundaries · data store per concern vs. shared · SQL vs.
 NoSQL per store · API style · where state lives · background processing · tenancy.
 
-**Gate:** container inventory table (name, responsibility, tech direction, talks-to,
-data owned) + `diagrams/c2-containers.mmd` + ADR index. Explicit yes before Stage 3.
+**Gate:** container inventory table (name, responsibility, **technology** — C4
+notation requires every container to have one explicitly, even if provisional and
+marked "to confirm in Stage 3" —, talks-to (with protocol per edge), data owned) +
+`diagrams/c2-containers.mmd` + ADR index. Explicit yes before Stage 3.
 
 ## Stage 3 — Component Design (C3) — THE CORE OF THIS SKILL
 
@@ -176,7 +186,30 @@ Ask the user to pick (with your recommendation): which containers carry enough r
 complexity, or novelty to deserve component-level design now? Default: the 1–3 that
 hold the core domain logic. CRUD-only containers get a paragraph, not a design.
 
-### 3b. Per chosen container, run the refinement loop at component depth
+### 3b. Technology Baseline (MANDATORY before designing any components)
+
+Component shapes depend on technology: an API designed around MediatR handlers has
+different components than one built on plain services; EF Core vs. Dapper changes
+the data-access layer's anatomy; a validation library decides whether validation is
+a component or an attribute. Therefore, BEFORE proposing any component decomposition
+for a container, resolve its technology baseline through the refinement loop
+(each fork = options + tradeoffs + recommendation + ADR):
+
+- **Language/runtime & framework** (often already known — confirm, don't re-ask)
+- **In-process architecture style:** layered / ports & adapters / vertical slices /
+  transaction script — as a tradeoff tied to team and domain complexity, not dogma
+- **Data access approach:** ORM vs. micro-ORM vs. raw — and its component implications
+- **In-process communication pattern:** direct services vs. mediator vs. in-proc events
+- **Cross-cutting libraries that shape components:** validation, auth/authz mechanism,
+  resilience (retries/circuit breakers), background scheduling, observability SDK
+- **Testing seams the stack implies** (what gets faked/stubbed at which boundary)
+
+Record the baseline at the top of the container's section in `component-design.md`.
+Only proceed to component decomposition once the baseline is confirmed — designing
+components before this is designing in the abstract, which produces exactly the
+vague C3 this skill exists to avoid.
+
+### 3c. Per chosen container, run the refinement loop at component depth
 
 Work through, in whatever order the dialogue earns — each fork gets options,
 tradeoffs, a decision, an ADR:
@@ -197,15 +230,17 @@ tradeoffs, a decision, an ADR:
 - **Evolution seams:** which components are extraction candidates if scale demands
   it later — noted, not built.
 
-### 3c. The C3 artifact (`component-design.md`)
+### 3d. The C3 artifact (`component-design.md`)
 
 Maintain per deep-dived container:
 
 ```
-## <Container>
+## <Container> [Container: <technology>]
+### Technology baseline      (from 3b: runtime, framework, style, data access,
+                              communication pattern, key libraries — with ADR links)
 ### Component map            (reference to diagrams/c3-<container-slug>.mmd)
-### Components               (table: name | responsibility | owns data | depends on)
-### Contracts                (per significant edge: in / out / errors / mode)
+### Components               (table: name | responsibility | technology | owns data | depends on)
+### Contracts                (per significant edge: in / out / errors / mode / protocol)
 ### Key flows                (2–3 sequence walkthroughs incl. one failure path)
 ### Decisions                (links to ADRs)
 ### Deliberately not decided (with revisit-triggers)
@@ -266,6 +301,9 @@ Wait for corrections, fold them in, then freeze the final artifacts.
 - Options without a recommendation, or a recommendation with a generic reason.
 - Re-litigating a decided fork beyond the follow-up allowance of Iron Rule 6.
 - Rushing C3 to "get to the diagrams" — the refined C3 IS the deliverable.
+- Designing components before the Technology Baseline (3b) is confirmed — abstract
+  boxes without technology are not a C3; C4 requires technology on every container
+  and component.
 - Decomposing every container to components.
 - Quoting cloud prices from memory; discussing price at all unless asked.
 - Skipping a Restatement gate because "we already discussed everything".

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0 — 2026-07-07
+
+- NEW Stage 3b — Technology Baseline: mandatory Socratic resolution of the
+  container's stack (framework, in-process style, data access, communication
+  pattern, shaping libraries) BEFORE any component decomposition. Component shapes
+  depend on technology; designing without it produced abstract C3s.
+- C4 notation conformance rules (per c4model.com) applied to all diagrams:
+  explicit technology on every container and component, specific unidirectional
+  relationship labels, technology/protocol on inter-container edges, titles and
+  legends.
+- component-design.md template: Technology baseline section + Technology column
+  in the components table; contracts now include protocol.
+- C2 gate now requires explicit (even if provisional) technology per container.
+
 ## 1.0.0 — 2026-07-03
 
 Initial release.
