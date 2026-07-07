@@ -81,13 +81,16 @@ Keep under `architecture/` in the project (or `/mnt/user-data/outputs/architectu
   the file is the current truth; history lives in git. Documents reference
   diagrams by path instead of embedding them.
 
-**C4 notation conformance (every diagram, per c4model.com):** a title stating type
-and scope · every element with explicit type, a one-line description, and — for
-every container and component — an explicit technology in brackets (e.g.
-`[Component: ASP.NET Core Controller]`) · every relationship unidirectional and
-specifically labelled (never just "Uses") · relationships between containers
-labelled with technology/protocol (e.g. "JSON/HTTPS", "AMQP") · a key/legend when
-notation isn't self-evident.
+**C4 notation conformance (every diagram):** a title stating type and scope · every
+element with explicit type and a one-line description · every relationship
+unidirectional and specifically labelled (never just "Uses") · every edge that
+crosses a container boundary labelled with technology/protocol ("JSON/HTTPS",
+"AMQP") — these are contracts and are never TBD in a finished C3 · technology in
+brackets on containers/components where it has been decided; where deliberately
+deferred, label the element's kind/interface style instead (a pragmatic deviation
+from strict notation, which recommends technology on every element) · a key/legend
+when notation isn't self-evident · when a house style exists (below), it overrides
+these defaults.
 
 **Resuming a session:** if `working-notes.md` exists, read it (and skim the ADRs)
 BEFORE saying anything. Open with a 3–5 line state summary — where we are, what was
@@ -141,6 +144,13 @@ diagrams, notes. Before any question:
 **Goal:** just enough shared understanding of the system boundary to design inside it.
 This stage is a means, not the destination — 4–7 questions typical.
 
+**Canon (c4model.com):** the system boundary is an OWNERSHIP boundary, not a domain
+one — a software system is what a single team builds, owns, and can see inside
+(often one repo, deployed together). Bounded contexts, business capabilities, and
+product domains are NOT software systems. Another team's service is an external
+software system, even if it belongs to the same product. Technology is NOT required
+at this level.
+
 Territory (order driven by the gaps from Stage 0): purpose & the one journey that must
 work · actors · external systems and their protocols · scale expectations as ranges ·
 hard constraints · non-functional priorities as a **ranking** (availability, latency,
@@ -154,6 +164,17 @@ diagram only if it clarifies — if built, save as `diagrams/c1-system-context.m
 
 **Goal:** the deployable-unit skeleton — apps, APIs, data stores, queues, workers —
 decided through the refinement loop, as scaffolding for the C3 work.
+
+**Canon (c4model.com):** a container is an application OR a data store — a runtime
+boundary around executing code or stored data (not Docker; the deployment mapping is
+a separate concern). Managed cloud data services (S3/Blob, RDS/Azure SQL) are modeled
+as containers — you own the buckets/schemas even if hosted elsewhere. A web app with
+significant client-side JavaScript is TWO containers (two process spaces, remote
+communication between them). JARs/assemblies/DLLs are code organization, never
+containers. Under single-team ownership, a "microservice" is a GROUP of containers
+(API + its schema) inside one software system; only when a separate team owns it does
+it become a separate software system (and the C1 changes shape — see Change Intake).
+Technology per container is captured when known; "TBD" is acceptable during design.
 
 ### The refinement loop (used here and, more deeply, in Stage 3)
 
@@ -169,10 +190,9 @@ Typical C2 forks (skip what the inputs already settle): monolith vs. modular mon
 vs. services · sync vs. async boundaries · data store per concern vs. shared · SQL vs.
 NoSQL per store · API style · where state lives · background processing · tenancy.
 
-**Gate:** container inventory table (name, responsibility, **technology** — C4
-notation requires every container to have one explicitly, even if provisional and
-marked "to confirm in Stage 3" —, talks-to (with protocol per edge), data owned) +
-`diagrams/c2-containers.mmd` + ADR index. Explicit yes before Stage 3.
+**Gate:** container inventory table (name, responsibility, technology if known —
+"TBD" is fine during design —, talks-to with protocol per edge where decided, data
+owned) + `diagrams/c2-containers.mmd` + ADR index. Explicit yes before Stage 3.
 
 ## Stage 3 — Component Design (C3) — THE CORE OF THIS SKILL
 
@@ -186,28 +206,47 @@ Ask the user to pick (with your recommendation): which containers carry enough r
 complexity, or novelty to deserve component-level design now? Default: the 1–3 that
 hold the core domain logic. CRUD-only containers get a paragraph, not a design.
 
-### 3b. Technology Baseline (MANDATORY before designing any components)
+### 3b. Boundary Semantics Baseline (MANDATORY before designing any components)
 
-Component shapes depend on technology: an API designed around MediatR handlers has
-different components than one built on plain services; EF Core vs. Dapper changes
-the data-access layer's anatomy; a validation library decides whether validation is
-a component or an attribute. Therefore, BEFORE proposing any component decomposition
-for a container, resolve its technology baseline through the refinement loop
-(each fork = options + tradeoffs + recommendation + ADR):
+**Canon (c4model.com):** a component is a grouping of related functionality
+**encapsulated behind a well-defined interface**, executing in-process with its
+container's other components; packaging (assembly/JAR/namespace) is orthogonal, and
+plain domain/data classes and utils are not components. What defines a component is
+its interface and responsibility — NOT its internal implementation.
 
-- **Language/runtime & framework** (often already known — confirm, don't re-ask)
-- **In-process architecture style:** layered / ports & adapters / vertical slices /
-  transaction script — as a tradeoff tied to team and domain complexity, not dogma
-- **Data access approach:** ORM vs. micro-ORM vs. raw — and its component implications
-- **In-process communication pattern:** direct services vs. mediator vs. in-proc events
-- **Cross-cutting libraries that shape components:** validation, auth/authz mechanism,
-  resilience (retries/circuit breakers), background scheduling, observability SDK
-- **Testing seams the stack implies** (what gets faked/stubbed at which boundary)
+Therefore the gate before designing components is not "pick the stack" — it is
+**resolve every choice that crosses a component's boundary**. Apply this litmus test
+to each candidate decision:
 
-Record the baseline at the top of the container's section in `component-design.md`.
-Only proceed to component decomposition once the baseline is confirmed — designing
-components before this is designing in the abstract, which produces exactly the
-vague C3 this skill exists to avoid.
+> **"If this choice changed tomorrow, would any OTHER component or container have to
+> change, or observe different behavior?"**
+> YES → must be decided in C3 (it is part of a contract).
+> NO → internal detail; defer to `Deliberately not decided` with a revisit-trigger,
+> or leave for implementation. Do NOT block the C3 on it.
+
+**Must be decided (boundary-crossing):** sync vs. async between elements and the
+interaction mechanism where an edge crosses a container (HTTP/gRPC/events — protocol
+labels are required on those edges) · delivery semantics of any queue/topic
+(at-least-once? ordered? DLQ?) and the idempotency obligations they impose on
+consumers · the error model at each boundary (shape, who retries, backoff) ·
+idempotency of exposed operations · data ownership and where invariants are enforced ·
+consistency visible to consumers (read-your-writes vs. eventual, tolerated staleness) ·
+auth mechanism at boundaries (what credential a caller must present).
+
+**May be deferred (internal, invisible from outside):** ORM vs. micro-ORM, mediator
+vs. direct services, validation/logging/resilience libraries, internal code
+architecture (layered / ports & adapters / vertical slices), packaging. If the user
+or the house style wants these fixed now, run them through the loop — but they are
+never a prerequisite for the C3.
+
+**Split rule for gray areas:** decide the SEMANTICS at C3, defer the TECHNOLOGY.
+Cache: "consumers may see up to 30s staleness" is contract (decide); Redis vs.
+in-memory is not (defer). Retry: "this caller retries 3×, so that operation must be
+idempotent" is contract; Polly vs. custom is not. Broker: at-least-once + per-key
+ordering is contract; Service Bus vs. Storage Queue is cloud mapping (Stage 4).
+
+Record the baseline (decided semantics + deliberately deferred internals) at the top
+of the container's section in `component-design.md`.
 
 ### 3c. Per chosen container, run the refinement loop at component depth
 
@@ -216,9 +255,10 @@ tradeoffs, a decision, an ADR:
 
 - **Responsibility slicing:** what are the components and what is each one's single
   job? Probe boundaries: "if requirement X changes, how many components move?"
-- **Domain vs. infrastructure seams:** where does business logic end and I/O begin?
-  What's the dependency direction? (ports/adapters vs. layered vs. transaction
-  script — as a tradeoff, not dogma).
+- **Domain vs. infrastructure seams** *(optional — internal organization; run it
+  only if the user or house style wants it fixed now, else defer)*: where business
+  logic ends and I/O begins; dependency direction (ports/adapters vs. layered vs.
+  transaction script — as a tradeoff, not dogma).
 - **Contracts between components:** for each significant edge — inputs, outputs,
   errors, sync/async, idempotency. Capture as short interface sketches, not code.
 - **Data ownership:** which component owns which entity/aggregate; who is allowed
@@ -235,9 +275,9 @@ tradeoffs, a decision, an ADR:
 Maintain per deep-dived container:
 
 ```
-## <Container> [Container: <technology>]
-### Technology baseline      (from 3b: runtime, framework, style, data access,
-                              communication pattern, key libraries — with ADR links)
+## <Container> [Container: <technology or TBD>]
+### Boundary semantics       (from 3b: decided contracts/semantics + deliberately
+                              deferred internals — with ADR links)
 ### Component map            (reference to diagrams/c3-<container-slug>.mmd)
 ### Components               (table: name | responsibility | technology | owns data | depends on)
 ### Contracts                (per significant edge: in / out / errors / mode / protocol)
@@ -248,6 +288,35 @@ Maintain per deep-dived container:
 
 **Gate:** Restatement (Stage 5 format) scoped to this container before moving to the
 next one.
+
+## House C3 Style (organization template intake)
+
+Organizations often have their own C3 conventions. The user may hand over an example
+component diagram/document ("our C3s look like this") at any point — treat it as a
+first-class input:
+
+1. **Mine it first** (Iron Rule 4): extract the conventions — notation and tool,
+   element naming patterns, granularity (how big is a "component" for them), what
+   their component table records, how they mark technology, how they show
+   cross-container edges, what they deliberately omit.
+2. **Question the ambiguities, one at a time:** anything the example doesn't make
+   inferable ("your example shows no error flows — omitted by convention, or just
+   in this diagram?").
+3. **Critique respectfully where it earns it:** if the example deviates from C4
+   canon or hides decision-relevant information (e.g., unlabelled edges, no
+   protocol on container crossings, ambiguous ownership), raise it ONCE as
+   fact + question — "this convention loses X; keep it for consistency or adjust?"
+   The house's answer wins and is recorded. Never re-litigate.
+4. **Distill and persist** the result as `house-style.md`: conventions, the
+   clarifications, and the accepted deviations. Storage: `architecture/house-style.md`
+   in the project; if the skill's own folder is writable (e.g. Claude Code personal
+   skills), ALSO copy it to `<skill-dir>/house-styles/<org-slug>.md` so future runs
+   in other projects can reuse it.
+5. **Apply it from then on:** every subsequent C3 (diagram and document) conforms to
+   the house style; it overrides this skill's default notation and templates. On
+   session start, check both storage locations and load a house style if present —
+   mention which one is in effect.
+6. House style changes go through Change Intake like any other input change.
 
 ## Stage 4 — Cloud Mapping (when a cloud is in play)
 
@@ -301,9 +370,13 @@ Wait for corrections, fold them in, then freeze the final artifacts.
 - Options without a recommendation, or a recommendation with a generic reason.
 - Re-litigating a decided fork beyond the follow-up allowance of Iron Rule 6.
 - Rushing C3 to "get to the diagrams" — the refined C3 IS the deliverable.
-- Designing components before the Technology Baseline (3b) is confirmed — abstract
-  boxes without technology are not a C3; C4 requires technology on every container
-  and component.
+- Designing components before the Boundary Semantics Baseline (3b) — a C3 whose
+  edges lack semantics (sync/async, delivery, errors, idempotency, ownership) is
+  abstract boxes, which is exactly what this skill exists to avoid.
+- The inverse failure: blocking the C3 on internal choices (libraries, ORM, code
+  architecture) that don't cross any boundary — those are deferrable by design.
+- Ignoring a provided house style, or re-litigating a house convention after the
+  organization has answered the critique once.
 - Decomposing every container to components.
 - Quoting cloud prices from memory; discussing price at all unless asked.
 - Skipping a Restatement gate because "we already discussed everything".

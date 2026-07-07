@@ -76,6 +76,9 @@ architecture/
 │   ├── ADR-001-<slug>.md     # one per decision; sequential 3-digit numbering,
 │   ├── ADR-002-<slug>.md     # kebab-case slug; reversed decisions are superseded
 │   └── ...                   # (Supersedes / Superseded by), never edited or deleted
+├── house-style.md            # optional: the organization's C3 conventions,
+│                             # distilled from an example via Socratic intake;
+│                             # overrides default notation/templates when present
 └── diagrams/                 # ONE file per diagram, Mermaid source
     ├── c1-system-context.mmd
     ├── c2-containers.mmd
