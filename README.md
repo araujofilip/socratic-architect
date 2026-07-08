@@ -18,15 +18,30 @@ fit — not pricing; prices are researched live only when asked).
 
 ## Installation
 
-Claude Code — clone into your skills directory:
+**Claude Code** — clone into your personal skills directory:
 
 ```bash
-git clone https://github.com/<you>/socratic-architect ~/.claude/skills/socratic-architect
+git clone https://github.com/araujofilip/socratic-architect ~/.claude/skills/socratic-architect
 ```
 
-Or per-project: `<repo>/.claude/skills/socratic-architect`.
+Or install it per-project instead of globally:
 
-Claude.ai — upload the packaged `.skill` file and click **Save skill**.
+```bash
+git clone https://github.com/araujofilip/socratic-architect .claude/skills/socratic-architect
+```
+
+Restart Claude Code (or start a new session) and invoke the skill by name:
+`socratic-architect`.
+
+**Claude.ai** — package the skill directory into a `.skill` bundle and upload it:
+
+```bash
+# from the repo root, zip the skill contents into a .skill file
+cd socratic-architect && zip -r ../socratic-architect.skill . && cd ..
+```
+
+Then in Claude.ai go to **Settings → Capabilities → Skills → Upload skill**,
+select `socratic-architect.skill`, and click **Save skill**.
 
 ## How it works
 
