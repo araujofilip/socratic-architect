@@ -1,19 +1,12 @@
 ---
 name: socratic-architect
 description: >
-  Socratic greenfield architecture design: takes vague or partial inputs (a few specs,
-  domain models, a rough idea) and drives a long, multi-session question→answer→question
-  dialogue to co-design a new system from scratch. Works top-down through C4 levels —
-  quick C1 (context), solid C2 (containers), and a DEEP C3 (component design), which is
-  the central deliverable: refined component responsibilities, boundaries, contracts, and
-  tradeoff-backed decisions recorded as ADRs. Includes cloud specialist knowledge (AWS or
-  Azure component catalogs — purpose and fit, not pricing). Always closes each stage with
-  a Requirements Restatement & Clarification gate. Use this skill whenever the user wants
-  to design a NEW system or major feature from scratch, shares specs/models and asks to
-  "think through the architecture", says "help me architect X", "let's design the
-  solution", "quero desenhar a arquitetura", or resumes a previous architecture design
-  session — even if they don't say "socratic" or "C4". Do NOT use for reviewing existing
-  architectures or for implementation tasks.
+  Use when designing a NEW system or major feature from scratch from vague or
+  partial inputs — the user shares spec fragments or domain models and asks to
+  "think through the architecture", "help me architect X", "let's design the
+  solution", "quero desenhar a arquitetura" — or when resuming a previous
+  architecture design session, even if they don't say "socratic" or "C4".
+  Do NOT use for reviewing existing architectures or for implementation tasks.
 allowed-tools: Read,Write,Glob,Grep
 ---
 

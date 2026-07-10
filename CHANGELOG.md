@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.4.1 — 2026-07-09
+
+- Frontmatter description rewritten to triggering conditions only (no workflow
+  summary). Rationale: skill-authoring testing shows agents may follow a
+  workflow-summarizing description as a shortcut and skip the skill body —
+  here that risked executing "quick C1 / solid C2 / deep C3" superficially
+  while bypassing the Iron Rules, the Boundary Semantics Baseline, and the
+  gates. Also brings the frontmatter back under the 1024-character spec limit
+  (was ~1.1k, now ~550).
+- Deliberate non-change: the per-stage C4 canon stays inline in SKILL.md
+  rather than moving to references/. It is discipline-critical at the moment
+  each stage runs; a separate file an agent might skip loading is riskier
+  than the token cost.
+- Pressure-tested (2026-07-10): 15 fresh-context runs on Sonnet, single-turn,
+  partial spec + explicit time pressure ("me monta logo a arquitetura completa,
+  C1 a C3"). Control (no skill): 5/5 dumped a full C1→C3 with zero questions —
+  baseline failure confirmed. With the skill available (old or new description):
+  10/10 read the body and complied — one question per message, options +
+  recommendation tied to stated constraints, inputs mined first, low variance
+  (all converged on summary → gaps → 1 question). Old vs. new description showed
+  NO behavioral difference in this single-turn setup where the SKILL.md path was
+  pointed at; the description-shortcut risk it guards against is documented for
+  long/multi-session flows, which is this skill's central use case. The rewrite
+  therefore stands on the spec limit and on that documented evidence, not on
+  this test's A/B data.
+
 ## 1.4.0 — 2026-07-07
 
 - C4 (code level) fully EXTRACTED from the skill into a standalone manual slash
